@@ -43,6 +43,3 @@ class Usuario(Base):
         self.LatitudDeseada = LatitudDeseada
         self.LugarDeseado = LugarDeseado
 
-
-    def __repr__(self):
-        return '<User(Nombre={self.Nombre!r})>'.format(self=self)

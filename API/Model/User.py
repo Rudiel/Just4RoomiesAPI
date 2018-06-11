@@ -23,11 +23,12 @@ class Usuario(Base):
     LongitudDeseada = Column(Numeric)
     LugarDeseado = Column(String)
 
-    def __init__(self, Nombre=None, Apellido=None, IdImagen=None, Nacionalidad=None, Genero=None, Edad=None,
+    def __init__(self,Id, Nombre=None, Apellido=None, IdImagen=None, Nacionalidad=None, Genero=None, Edad=None,
                  IdFacebook=None,
                  Email=None, Contrasenia=None, Descripcion=None, Presupuesto=None, LongitudDeseada=None,
                  LatitudDeseada=None,
                  LugarDeseado=None):
+        self.id = Id
         self.Nombre = Nombre
         self.Apellido = Apellido
         self.IdImagen = IdImagen

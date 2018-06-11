@@ -4,7 +4,14 @@ from sqlalchemy import create_engine,MetaData
 from flask import json
 from decimal import Decimal
 from Model.User import Usuario
+import uuid
+
+
 app = Flask(__name__)
+
+if __name__ == '__main__':
+    app.run()
+
 
 #Cadena de conexion a la bd
 engine = create_engine(
@@ -27,13 +34,14 @@ def getProfiles():
     for usuario in usuarios:
         #Se crea un objeto por cada usuario
         UsuarioObj ={
+            'Id': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.id),
             'Nombre' : usuario.Nombre,
             'Apellido': usuario.Apellido,
             'IdImagen': usuario.IdImagen,
             'Nacionalidad': usuario.Nacionalidad,
             'Genero': usuario.Genero,
             'Edad': usuario.Edad,
-            'IdFacebook': usuario.IdFacebook,
+            'IdFacebook': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.IdFacebook),
             'Email': usuario.Email,
             'Contrasenia': usuario.Contrasenia,
             'Descripcion': usuario.Descripcion,
@@ -41,8 +49,46 @@ def getProfiles():
         }
         #Se agrega el objeto a la lista
         dataList.append(UsuarioObj)
+
+        session.commit()
+
     #Regresa el listado de objetos cerados
     return jsonify(dataList)
+
+@app.route('/api/SaveProfile', methods=['POST'])
+def saveProfile():
+
+        #Se obtienen los datos del request
+        req_data = request.get_json()
+
+        #Se asignan a constantes los datos especificos del request
+        Nombre = req_data['Nombre']
+        Apellido = req_data ['Apellido']
+        Nacionalidad = req_data ['Nacionalidad']
+        Email = req_data ['Email']
+        Genero = req_data['Genero']
+        Edad = req_data['Edad']
+        Descripcion = req_data ['Descripcion']
+        IdFacebook = req_data ['IdFacebook']
+        Presupuesto = req_data['Presupuesto']
+        Latitud = req_data ['Latitud']
+        Longitud = req_data['Longitud']
+        Lugar = req_data['Lugar']
+        Contrasenia = req_data['Contrasenia']
+
+        #Se crea un nuevo id
+        id= str(uuid.uuid4())
+
+        #Se crea un objeto usuario
+        usuario = Usuario(id,Nombre,Apellido,"",Nacionalidad,Genero,Edad,id,Email,Contrasenia,Descripcion,Presupuesto,Longitud, Latitud,Lugar)
+
+        #Se guarda el usuario en la bd
+        session.add(usuario)
+
+        session.commit()
+
+        #*Falta validar si la operacion se realizo con exito asi como los mensajes de error y authorization *
+        return  jsonify(id)
 
 class DecimalEncoder(json.JSONEncoder):
     def _iterencode(self, o, markers=None):
@@ -50,5 +96,3 @@ class DecimalEncoder(json.JSONEncoder):
             return (str(o) for o in [o])
         return super(DecimalEncoder, self)._iterencode(o, markers)
 
-if __name__ == '__main__':
-    app.run()

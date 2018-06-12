@@ -5,13 +5,14 @@ from flask import json
 from decimal import Decimal
 from Model.User import Usuario
 import uuid
-
+from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
 
 if __name__ == '__main__':
     app.run()
 
+auth= HTTPBasicAuth()
 
 #Cadena de conexion a la bd
 engine = create_engine(
@@ -24,8 +25,22 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
+AUTH = {
+    "User_J4R": "db108068-6e55-11e8-adc0-fa7ae01bbebc"
+}
+
+@auth.verify_password
+def verify(username,password):
+    if not username and password:
+        return False
+    return AUTH.get(username)== password
+
+
+
 @app.route('/api/GetProfiles',methods=['GET'])
+@auth.login_required
 def getProfiles():
+
     #Se hace el query a la bd
     usuarios = session.query(Usuario).all()
     #Se crea una lista vacia
@@ -56,6 +71,7 @@ def getProfiles():
     return jsonify(dataList)
 
 @app.route('/api/SaveProfile', methods=['POST'])
+@auth.login_required
 def saveProfile():
 
         #Se obtienen los datos del request
@@ -90,9 +106,4 @@ def saveProfile():
         #*Falta validar si la operacion se realizo con exito asi como los mensajes de error y authorization *
         return  jsonify(id)
 
-class DecimalEncoder(json.JSONEncoder):
-    def _iterencode(self, o, markers=None):
-        if isinstance(o, Decimal):
-            return (str(o) for o in [o])
-        return super(DecimalEncoder, self)._iterencode(o, markers)
 

@@ -36,6 +36,16 @@ def verify(username,password):
         return False
     return AUTH.get(username)== password
 
+@app.route('/api/Login',methods=['POST'])
+@auth.login_required()
+def login():
+    req_data = request.get_json()
+
+    Usuario = req_data['Usuario']
+    Pass = req_data['Password']
+
+    return None
+
 
 
 @app.route('/api/GetProfiles',methods=['GET'])

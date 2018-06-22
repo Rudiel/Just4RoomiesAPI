@@ -37,7 +37,7 @@ def verify(username,password):
     return AUTH.get(username)== password
 
 @app.route('/api/Login',methods=['POST'])
-@auth.login_required()
+@auth.login_required
 def login():
     req_data = request.get_json()
 

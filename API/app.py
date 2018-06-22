@@ -3,7 +3,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine,MetaData
 from flask import json
 from decimal import Decimal
-from Model.User import Usuario
+from Model.Usuario import Usuario
+from Model.Habitacion import Habitacion
 import uuid
 from flask_httpauth import HTTPBasicAuth
 
@@ -22,8 +23,8 @@ metadata = MetaData(engine)
 
 #Se crea una sesion con la conexion ya creada
 Session = sessionmaker(bind=engine)
-session = Session()
 
+session = Session()
 
 AUTH = {
     "User_J4R": "db108068-6e55-11e8-adc0-fa7ae01bbebc"
@@ -47,6 +48,15 @@ def getProfiles():
     dataList= []
     #Se itera en cada usuario de la lista de usuarios que regresa el query
     for usuario in usuarios:
+
+        room = session.query(Habitacion).filter(Habitacion.IdUsuario == usuario.id).first()
+
+        RoomObj = {}
+        if room is not None:
+            RoomObj = {
+                'Id': room.IdHabitacion
+            }
+
         #Se crea un objeto por cada usuario
         UsuarioObj ={
             'Id': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.id),
@@ -60,8 +70,10 @@ def getProfiles():
             'Email': usuario.Email,
             'Contrasenia': usuario.Contrasenia,
             'Descripcion': usuario.Descripcion,
-            'Lugar': usuario.LugarDeseado
+            'Lugar': usuario.LugarDeseado,
+            'Room': RoomObj
         }
+
         #Se agrega el objeto a la lista
         dataList.append(UsuarioObj)
 
@@ -105,5 +117,30 @@ def saveProfile():
 
         #*Falta validar si la operacion se realizo con exito asi como los mensajes de error y authorization *
         return  jsonify(id)
+
+
+@app.route('/api/SaveRoom',methods=['POST'])
+@auth.login_required
+def saveRoom():
+
+    req_data = request.get_json()
+
+    FechaDisponibilidad = req_data['FechaDisponibilidad']
+    Amueblado = req_data['Amueblado']
+    Costo = req_data ['Costo']
+    Latitud = req_data ['Latitud']
+    Longitud = req_data['Longitud']
+    IdUsuario = str(uuid.uuid5(uuid.NAMESPACE_DNS,req_data['IdUsuario'].encode('utf-8')))
+
+
+    id= str(uuid.uuid4())
+
+    room = Habitacion(id,IdUsuario , FechaDisponibilidad, Amueblado, Costo, Latitud, Longitud)
+
+    session.add(room)
+
+    session.commit()
+
+    return jsonify(id)
 
 

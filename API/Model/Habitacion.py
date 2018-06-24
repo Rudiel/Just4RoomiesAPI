@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, Binary, Numeric, Float, Date, Boolean, ForeignKey,SmallInteger
-from base import Base
-
+from API.Model.base import Base
 
 class Habitacion(Base):
     __tablename__ = 'Habitacion'

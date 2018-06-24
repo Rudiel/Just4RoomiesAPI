@@ -3,8 +3,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine,MetaData
 from flask import json
 from decimal import Decimal
-from Model.Usuario import Usuario
-from Model.Habitacion import Habitacion
+from API.Model.Usuario import Usuario
+from API.Model.Habitacion import Habitacion
+from API.Model.Personalidad import Personalidad
 import uuid
 from flask_httpauth import HTTPBasicAuth
 
@@ -64,23 +65,36 @@ def getProfiles():
         RoomObj = {}
         if room is not None:
             RoomObj = {
-                'Id': room.IdHabitacion
+                'Id': room.IdHabitacion,
+                'Amueblado' : room.Amueblado
             }
+        personalidad = session.query(Personalidad).filter(Personalidad.IdUsuario == usuario.id).first()
 
+        personObj = {}
+        if personalidad is not None:
+            personObj = {
+                 'Fumas' : personalidad.Fumas,
+                 'Mascotas' : personalidad.Mascotas,
+                 'Estudias' : personalidad.Estudias,
+                 'Activo' : personalidad.Activo,
+                 'Fiestero' : personalidad.Fiestero,
+                 'Cocinas' : personalidad.Cocinas
+            }
         #Se crea un objeto por cada usuario
         UsuarioObj ={
-            'Id': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.id),
+            #'Id': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.id),
             'Nombre' : usuario.Nombre,
             'Apellido': usuario.Apellido,
             'IdImagen': usuario.IdImagen,
             'Nacionalidad': usuario.Nacionalidad,
             'Genero': usuario.Genero,
             'Edad': usuario.Edad,
-            'IdFacebook': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.IdFacebook),
+            #'IdFacebook': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.IdFacebook),
             'Email': usuario.Email,
             'Contrasenia': usuario.Contrasenia,
             'Descripcion': usuario.Descripcion,
             'Lugar': usuario.LugarDeseado,
+            'Personalidad' : personObj,
             'Room': RoomObj
         }
 

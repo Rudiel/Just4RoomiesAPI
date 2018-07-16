@@ -149,6 +149,7 @@ def saveRoom():
 
     req_data = request.get_json()
 
+
     FechaDisponibilidad = req_data['FechaDisponibilidad']
     Amueblado = req_data['Amueblado']
     Costo = req_data ['Costo']
@@ -168,3 +169,109 @@ def saveRoom():
     return jsonify(id)
 
 
+@app.route('/api/savePerson',methods=['POST'])
+@auth.login_required
+def savePerson():
+
+    req_data = request.get_json()
+
+    Fumas  = req_data['Fumas']
+    Mascotas = req_data['Mascotas']
+    Estudias = req_data['Estudias']
+    Activo = req_data['Activo']
+    Fiestero = req_data['Fiestero']
+    Cocinas = req_data['Cocinas']
+    IdUsuario = str(uuid.uuid5(uuid.NAMESPACE_DNS,req_data['IdUsuario'].encode('utf-8')))
+
+
+    id= str(uuid.uuid4())
+
+    personalidad = Habitacion(id,IdUsuario , Fumas, Mascotas, Estudias, Activo, Fiestero, Cocinas)
+
+    session.add(personalidad)
+
+    session.commit()
+
+    return jsonify(id)
+
+
+@app.route('/api/LoginUsuario',methods=['POST'])
+@auth.login_required
+def LoginUsuario():
+    req_data = request.get_json()
+
+    Contrasenia = req_data['Contrasenia']
+    Email = req_data['Email']
+
+    Comp= session.query(Usuario).filter(Usuario.Email == Email).first()
+
+
+    if Comp is not None:
+
+      if Usuario.Contrasenia==Contrasenia:
+           return "Usuario Correcto"
+    else:
+
+        return "Contraseña incorrecta"
+    return "El usuario no existe"
+    session.commit()
+
+    return jsonify(id)
+
+@app.route('/api/LoginFace',methods=['POST'])
+@auth.login_required
+def LoginFace():
+    req_data = request.get_json()
+
+    IdFacebook = req_data['IdFacebook']
+
+    Comp= session.query(Usuario).filter(Usuario.IdFacebook == IdFacebook).first()
+
+
+    if Comp is not None:
+
+        room = session.query(Habitacion).filter(Habitacion.IdUsuario == Comp.id).first()
+        RoomObj = {}
+        if room is not None:
+            RoomObj = {
+                'Id': room.IdHabitacion,
+                'Amueblado': room.Amueblado
+            }
+        personalidad = session.query(Personalidad).filter(Personalidad.IdUsuario == Comp.id).first()
+
+        personObj = {}
+        if personalidad is not None:
+            personObj = {
+                'Fumas': personalidad.Fumas,
+                'Mascotas': personalidad.Mascotas,
+                'Estudias': personalidad.Estudias,
+                'Activo': personalidad.Activo,
+                'Fiestero': personalidad.Fiestero,
+                'Cocinas': personalidad.Cocinas
+            }
+
+            UsObj = {
+              'Nombre': Comp.Nombre,
+              'Apellido': Comp.Apellido,
+              'IdImagen': Comp.IdImagen,
+              'Nacionalidad': Comp.Nacionalidad,
+              'Genero': Comp.Genero,
+              'Edad': Comp.Edad,
+              # 'IdFacebook': uuid.uuid5(uuid.NAMESPACE_DNS,usuario.IdFacebook),
+              'Email': Comp.Email,
+              'Contrasenia': Comp.Contrasenia,
+              'Descripcion': Comp.Descripcion,
+              'Lugar': Comp.LugarDeseado,
+              'Personalidad': personObj,
+              'Room': RoomObj
+            }
+
+    else:
+
+
+     return "El usuario no existe"
+
+
+    session.commit()
+
+    return jsonify(UsObj)

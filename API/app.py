@@ -60,11 +60,105 @@ def login():
         return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)'''
 
 
+@app.route('/api/GetProfiles/Page',methods=['GET'])
+@auth.login_required
+def page():
+    return get_paginated_list(Usuario, '/api/GetProfiles/Page', start=request.args.get('start',1,int), limit=request.args.get('limit',10,int))
+
+
+def get_paginated_list(cls, url, start, limit):
+    usuarios = session.query(cls).all()
+    count = len(usuarios)
+
+    if (count < start):
+        return None
+
+    obj = {}
+    obj['start'] = start
+    obj['limit'] = limit
+    obj['count'] = count
+
+    if start == 1:
+        obj['previous'] = ''
+    else:
+        start_copy = max(1, start - limit)
+        limit_copy = start - 1
+        obj['previous'] = url + '?start=%d&limit=%d' % (start_copy, limit_copy)
+
+    if start + limit > count:
+        obj['next'] = ''
+    else:
+        start_copy = start + limit
+        obj['next'] = url + '?start=%d&limit=%d' % (start_copy, limit)
+
+    usuarios = usuarios[(start - 1):(start - 1 + limit)]
+
+    dataList = []
+
+    usuariosList = []
+
+    dataList.append(obj)
+
+    # Se itera en cada usuario de la lista de usuarios que regresa el query
+    for usuario in usuarios:
+
+        room = session.query(Habitacion).filter(Habitacion.IdUsuario == usuario.id).first()
+
+        RoomObj = {}
+        if room is not None:
+            RoomObj = {
+                'Id': room.IdHabitacion,
+                'Amueblado': room.Amueblado,
+                'Costo': room.Costo,
+                'Latitud': room.Latitud,
+                'Longitud': room.Longitud
+            }
+        personalidad = session.query(Personalidad).filter(Personalidad.IdUsuario == usuario.id).first()
+
+        personObj = {}
+        if personalidad is not None:
+            personObj = {
+                'Fumas': personalidad.Fumas,
+                'Mascotas': personalidad.Mascotas,
+                'Estudias': personalidad.Estudias,
+                'Activo': personalidad.Activo,
+                'Fiestero': personalidad.Fiestero,
+                'Cocinas': personalidad.Cocinas
+            }
+        # Se crea un objeto por cada usuario
+        UsuarioObj = {
+            'Id': str(usuario.id),
+            'Nombre': usuario.Nombre,
+            'Apellido': usuario.Apellido,
+            'IdImagen': usuario.IdImagen,
+            'Nacionalidad': usuario.Nacionalidad,
+            'Genero': usuario.Genero,
+            'Edad': usuario.Edad,
+            'IdFacebook': str(usuario.IdFacebook),
+            'Email': usuario.Email,
+            'Contrasenia': usuario.Contrasenia,
+            'Descripcion': usuario.Descripcion,
+            'Lugar': usuario.LugarDeseado,
+            'Personalidad': personObj,
+            'Room': RoomObj
+        }
+
+        # Se agrega el objeto a la lista
+        usuariosList.append(UsuarioObj)
+
+    dataList.append(usuariosList)
+
+    session.commit()
+
+    # Regresa el listado de objetos cerados
+    return jsonify(dataList)
+
 @app.route('/api/GetProfiles', methods=['GET'])
 @auth.login_required
 def getProfiles():
     # Se hace el query a la bd
     usuarios = session.query(Usuario).all()
+
     # Se crea una lista vacia
     dataList = []
     # Se itera en cada usuario de la lista de usuarios que regresa el query
@@ -78,8 +172,8 @@ def getProfiles():
                 'Id': room.IdHabitacion,
                 'Amueblado': room.Amueblado,
                 'Costo': room.Costo,
-                'Latitud':room.Latitud,
-                'Longitud':room.Longitud
+                'Latitud': room.Latitud,
+                'Longitud': room.Longitud
             }
         personalidad = session.query(Personalidad).filter(Personalidad.IdUsuario == usuario.id).first()
 
@@ -258,11 +352,10 @@ def LoginFace():
     return jsonify(UsObj)
 
 
-@app.route('/api/CreateProfile',methods=['POST'])
+@app.route('/api/CreateProfile', methods=['POST'])
 @auth.login_required
 def createUser():
-
-    #TODO crear un usuario con
+    # TODO crear un usuario con el Nombre. Apellido, Correo electronico y contrasenia
 
     return None
 
@@ -276,11 +369,11 @@ def createPersonality():
     Nacionalidad = req_data['Nacionalidad']
     Idioma = req_data['Idioma']
     Edad = req_data['Edad']
-    Longitud = req_data ['Longitud']
+    Longitud = req_data['Longitud']
     Latitud = req_data['Latitud']
     Fumas = req_data['Fumas']
     Mascotas = req_data['Mascotas']
-    Activo = req_data ['Activo']
+    Activo = req_data['Activo']
     Fiestero = req_data['Fiestero']
     Estudias = req_data['Estudias']
     Cocinas = req_data['Cocinas']

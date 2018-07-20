@@ -6,7 +6,7 @@ from API.Model.Habitacion import Habitacion
 from API.Model.Personalidad import Personalidad
 import uuid
 from flask_httpauth import HTTPBasicAuth
-from flask_api import status
+from flask_api import status, response
 
 app = Flask(__name__)
 
@@ -73,6 +73,8 @@ def get_paginated_list(cls, url, start, limit):
     if (count < start):
         return None
 
+    objRoomie = {}
+
     obj = {}
     obj['start'] = start
     obj['limit'] = limit
@@ -93,12 +95,11 @@ def get_paginated_list(cls, url, start, limit):
 
     usuarios = usuarios[(start - 1):(start - 1 + limit)]
 
-    dataList = []
+    #dataList = []
 
     usuariosList = []
 
-    dataList.append(obj)
-
+    #dataList.append(obj)
     # Se itera en cada usuario de la lista de usuarios que regresa el query
     for usuario in usuarios:
 
@@ -146,12 +147,17 @@ def get_paginated_list(cls, url, start, limit):
         # Se agrega el objeto a la lista
         usuariosList.append(UsuarioObj)
 
-    dataList.append(usuariosList)
+    #dataList.append(usuariosList)
+
+    objRoomie = {
+        'Pagination': obj,
+        'Roomies': usuariosList
+    }
 
     session.commit()
 
     # Regresa el listado de objetos cerados
-    return jsonify(dataList)
+    return jsonify(objRoomie)
 
 @app.route('/api/GetProfiles', methods=['GET'])
 @auth.login_required
@@ -287,12 +293,19 @@ def LoginUsuario():
     if Comp is not None:
 
         if Comp.Contrasenia == Contrasenia:
-            return "Usuario Correcto"
+            content = {"message": "Usuario Logueado Correctamente",
+                       "Code":200}
+            return make_response(jsonify(content), status.HTTP_200_OK)
+
         else:
-            return "Contrasenia incorrecta"
+            content = {"message":"El Password es Incorrecto",
+                       "Code":400}
+            return make_response(jsonify(content),status.HTTP_400_BAD_REQUEST)
 
     else:
-        return "El usuario no existe"
+        content = {"message": "El Usuario No Existe",
+                   "Code": 400}
+        return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)
 
 
 @app.route('/api/LoginFace', methods=['POST'])
@@ -397,3 +410,9 @@ def createPersonality():
     session.commit()
 
     return jsonify(IdUsuario)
+
+
+def bad_request(message):
+    response = jsonify({'message': message})
+    response.status_code =400
+    return response

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, json
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData
 from API.Model.Usuario import Usuario
@@ -7,6 +7,7 @@ from API.Model.Personalidad import Personalidad
 import uuid
 from flask_httpauth import HTTPBasicAuth
 from flask_api import status, response
+from pyfcm import FCMNotification
 
 app = Flask(__name__)
 
@@ -60,10 +61,11 @@ def login():
         return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)'''
 
 
-@app.route('/api/GetProfiles/Page',methods=['GET'])
+@app.route('/api/GetProfiles/Page', methods=['GET'])
 @auth.login_required
 def page():
-    return get_paginated_list(Usuario, '/api/GetProfiles/Page', start=request.args.get('start',1,int), limit=request.args.get('limit',10,int))
+    return get_paginated_list(Usuario, '/api/GetProfiles/Page', start=request.args.get('start', 1, int),
+                              limit=request.args.get('limit', 10, int))
 
 
 def get_paginated_list(cls, url, start, limit):
@@ -95,11 +97,11 @@ def get_paginated_list(cls, url, start, limit):
 
     usuarios = usuarios[(start - 1):(start - 1 + limit)]
 
-    #dataList = []
+    # dataList = []
 
     usuariosList = []
 
-    #dataList.append(obj)
+    # dataList.append(obj)
     # Se itera en cada usuario de la lista de usuarios que regresa el query
     for usuario in usuarios:
 
@@ -147,7 +149,7 @@ def get_paginated_list(cls, url, start, limit):
         # Se agrega el objeto a la lista
         usuariosList.append(UsuarioObj)
 
-    #dataList.append(usuariosList)
+    # dataList.append(usuariosList)
 
     objRoomie = {
         'Pagination': obj,
@@ -158,6 +160,7 @@ def get_paginated_list(cls, url, start, limit):
 
     # Regresa el listado de objetos cerados
     return jsonify(objRoomie)
+
 
 @app.route('/api/GetProfiles', methods=['GET'])
 @auth.login_required
@@ -294,13 +297,13 @@ def LoginUsuario():
 
         if Comp.Contrasenia == Contrasenia:
             content = {"message": "Usuario Logueado Correctamente",
-                       "Code":200}
+                       "Code": 200}
             return make_response(jsonify(content), status.HTTP_200_OK)
 
         else:
-            content = {"message":"El Password es Incorrecto",
-                       "Code":400}
-            return make_response(jsonify(content),status.HTTP_400_BAD_REQUEST)
+            content = {"message": "El Password es Incorrecto",
+                       "Code": 400}
+            return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)
 
     else:
         content = {"message": "El Usuario No Existe",
@@ -414,5 +417,23 @@ def createPersonality():
 
 def bad_request(message):
     response = jsonify({'message': message})
-    response.status_code =400
+    response.status_code = 400
     return response
+
+
+@app.route('/api/sendNotification', methods=['GET'])
+def sendNotification():
+    push_service = FCMNotification(
+        api_key="AAAAxOPDl_w:APA91bGCRzNWhu9DWBa9WICdaG2KVFGsZf_bDTWyPI6T7uiRqWFhI_B69P-Fgf0nE6eeccIl0cPfuPwaWcnHo5McLMHF4e1iQ8sCM69Fr7ksnAc6049Yt4MB3TNRmvX1oLc3giwuoN0YYnySvtfO96sqKSBEiVPp0g")
+
+    registration_id = "dUkj7m266mo:APA91bHC_x_a2SarndoHW4F7UL1GEGMUMsfIEYEZJ2RGwi-g8n8ZrAoyMvDb3SAan_Lrds7_VY86xO72TO6G2H20rOc3Uz32yVjo2S9HCSNIybDZk2_hYrdrwGdv7HIHKs2KG6TUymG4VZRcYzjvrbQFGTfbMvoywg"
+    message_title = "Titulo"
+    message_body = "Hola"
+
+    result = push_service.notify_single_device(registration_id=registration_id, message_title=message_title,
+                                               message_body=message_body)
+
+    if(result.get('success') == 1) :
+        return make_response("Push Enviada", status.HTTP_200_OK)
+    else:
+     return make_response("Push No enviada", status.HTTP_400_BAD_REQUEST)

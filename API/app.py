@@ -25,8 +25,6 @@ metadata = MetaData(engine)
 # Se crea una sesion con la conexion ya creada
 Session = sessionmaker(bind=engine)
 
-session = Session()
-
 AUTH = {
     "User_J4R": "db108068-6e55-11e8-adc0-fa7ae01bbebc"
 }
@@ -39,28 +37,6 @@ def verify(username, password):
     return AUTH.get(username) == password
 
 
-'''@app.route('/api/Login', methods=['POST'])
-@auth.login_required
-def login():
-    req_data = request.get_json()
-
-    user = req_data['Usuario']
-    password = req_data['Password']
-
-    usuario = session.query(Usuario).filter(Usuario.Email == user).first()
-
-    if usuario is not None:
-        if usuario.Contrasenia == password:
-            content = {"message": "El usuario si existe"}
-            return make_response(jsonify(content), status.HTTP_200_OK)
-        else:
-            content = {"message": "El password es invalido"}
-            return make_response(jsonify(content), status.HTTP_406_NOT_ACCEPTABLE)
-    else:
-        content = {"message": "El usario no es correcto"}
-        return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)'''
-
-
 @app.route('/api/GetProfiles/Page', methods=['GET'])
 @auth.login_required
 def page():
@@ -69,6 +45,7 @@ def page():
 
 
 def get_paginated_list(cls, url, start, limit):
+    session = Session()
     usuarios = session.query(cls).all()
     count = len(usuarios)
 
@@ -165,6 +142,8 @@ def get_paginated_list(cls, url, start, limit):
 @app.route('/api/GetProfiles', methods=['GET'])
 @auth.login_required
 def getProfiles():
+    session = Session()
+
     # Se hace el query a la bd
     usuarios = session.query(Usuario).all()
 
@@ -226,6 +205,8 @@ def getProfiles():
 @app.route('/api/SaveProfile', methods=['POST'])
 @auth.login_required
 def saveProfile():
+    session = Session()
+
     # Se obtienen los datos del request
     req_data = request.get_json()
 
@@ -263,6 +244,8 @@ def saveProfile():
 @app.route('/api/SaveRoom', methods=['POST'])
 @auth.login_required
 def saveRoom():
+    session = Session()
+
     req_data = request.get_json()
 
     FechaDisponibilidad = req_data['FechaDisponibilidad']
@@ -286,6 +269,8 @@ def saveRoom():
 @app.route('/api/LoginUsuario', methods=['POST'])
 @auth.login_required
 def LoginUsuario():
+    session = Session()
+
     req_data = request.get_json()
 
     Contrasenia = req_data['Contrasenia']
@@ -314,6 +299,8 @@ def LoginUsuario():
 @app.route('/api/LoginFace', methods=['POST'])
 @auth.login_required
 def LoginFace():
+    session = Session()
+
     req_data = request.get_json()
 
     IdFacebook = req_data['IdFacebook']
@@ -371,14 +358,53 @@ def LoginFace():
 @app.route('/api/CreateProfile', methods=['POST'])
 @auth.login_required
 def createUser():
-    # TODO crear un usuario con el Nombre. Apellido, Correo electronico y contrasenia
+    session = Session()
 
-    return None
+    req_data = request.get_json()
+
+    Nombre = req_data['Nombre']
+    Apellido = req_data['Apellido']
+    Imagen = req_data['Imagen']
+    Email = req_data['Email']
+    Contrasenia = req_data['Contrasenia']
+
+    if Nombre and Apellido and Imagen and Email and Contrasenia is not None:
+
+        userAlready = session.query(Usuario).filter(Usuario.Email == Email).first()
+        if userAlready is None:
+
+            id = str(uuid.uuid1())
+            usuario = Usuario(id, Nombre, Apellido, id, "", 0, 0, id, Email, Contrasenia, "", 0, 0, 0,
+                              "")
+
+            session.add(usuario)
+
+            result = session.add(usuario)
+
+            session.commit()
+
+            print(result)
+
+            content = {"UserID": id,
+                       "message": "Usuario Creado con exito",
+                       "Code": 200}
+            return make_response(jsonify(content), status.HTTP_200_OK)
+
+        else:
+            content = {"message": "El Usuario ya existe",
+                       "Code": 400}
+            return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)
+    else:
+        content = {"message": "Algun campo esta vacio",
+                   "Code": 400}
+        return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)
 
 
 @app.route('/api/CreatePersonality', methods=['POST'])
 @auth.login_required
 def createPersonality():
+    session = Session()
+
     req_data = request.get_json()
 
     IdUsuario = req_data['IdUsuario'].encode('utf-8')
@@ -426,14 +452,15 @@ def sendNotification():
     push_service = FCMNotification(
         api_key="AAAAxOPDl_w:APA91bGCRzNWhu9DWBa9WICdaG2KVFGsZf_bDTWyPI6T7uiRqWFhI_B69P-Fgf0nE6eeccIl0cPfuPwaWcnHo5McLMHF4e1iQ8sCM69Fr7ksnAc6049Yt4MB3TNRmvX1oLc3giwuoN0YYnySvtfO96sqKSBEiVPp0g")
 
-    registration_id = "dUkj7m266mo:APA91bHC_x_a2SarndoHW4F7UL1GEGMUMsfIEYEZJ2RGwi-g8n8ZrAoyMvDb3SAan_Lrds7_VY86xO72TO6G2H20rOc3Uz32yVjo2S9HCSNIybDZk2_hYrdrwGdv7HIHKs2KG6TUymG4VZRcYzjvrbQFGTfbMvoywg"
+    # registration_id = "dUkj7m266mo:APA91bHC_x_a2SarndoHW4F7UL1GEGMUMsfIEYEZJ2RGwi-g8n8ZrAoyMvDb3SAan_Lrds7_VY86xO72TO6G2H20rOc3Uz32yVjo2S9HCSNIybDZk2_hYrdrwGdv7HIHKs2KG6TUymG4VZRcYzjvrbQFGTfbMvoywg"
+    registration_id = "diDbllRXYv4:APA91bEcDKv3zUWPLQJag80wZaUS4zk-Mafm-5Amge3yRVVj_2A9kaQlTgYEC3rX5icihkoXPW4Ww_YiSOhqxMhI6Oak0FNy0F7-uo5gyEvUlEljr9OouwAbMIm9b7QVn7NpM08shl6jTDCWlsfK5hBYKA6EgviBDA"
     message_title = "Titulo"
     message_body = "Hola"
 
     result = push_service.notify_single_device(registration_id=registration_id, message_title=message_title,
                                                message_body=message_body)
 
-    if(result.get('success') == 1) :
+    if (result.get('success') == 1):
         return make_response("Push Enviada", status.HTTP_200_OK)
     else:
-     return make_response("Push No enviada", status.HTTP_400_BAD_REQUEST)
+        return make_response("Push No enviada", status.HTTP_400_BAD_REQUEST)

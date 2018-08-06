@@ -255,15 +255,36 @@ def saveRoom():
     Longitud = req_data['Longitud']
     IdUsuario = req_data['IdUsuario'].encode('utf-8')
 
-    id = str(uuid.uuid1())
+    room = session.query(Habitacion).filter(Habitacion.IdUsuario == IdUsuario).first()
 
-    room = Habitacion(id, IdUsuario, FechaDisponibilidad, Amueblado, Costo, Latitud, Longitud)
+    if room is not None:
+        # Editar habitacion
+        room.Amueblado = Amueblado
+        room.Longitud = Longitud
+        room.Latitud = Latitud
+        room.Costo = Costo
+        room.FechaDisponibilidad = FechaDisponibilidad
 
-    session.add(room)
+        session.commit()
 
-    session.commit()
+        content = {"message": "Habitacion editada correctamente",
+                   "Code": 200}
+        return make_response(jsonify(content), status.HTTP_200_OK)
 
-    return jsonify(id)
+    else:
+        # Nueva habitacion
+        id = str(uuid.uuid1())
+
+        newRoom = Habitacion(id, IdUsuario, FechaDisponibilidad, Amueblado, Costo, Latitud, Longitud)
+
+        session.add(newRoom)
+
+        session.commit()
+
+        content = {"message": "Habitacion creada correctamente",
+                   "Code": 200}
+        return make_response(jsonify(content), status.HTTP_200_OK)
+
 
 
 @app.route('/api/LoginUsuario', methods=['POST'])
@@ -435,10 +456,28 @@ def createPersonality():
         personalidad = Personalidad(id, usuario.id, Fumas, Mascotas, Estudias, Activo, Fiestero, Cocinas)
 
         session.add(personalidad)
+        session.commit()
 
-    session.commit()
+        content = {"message": "Se guardo la informacion correctamente",
+                   "Code": 200}
+        return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)
 
-    return jsonify(IdUsuario)
+
+    else:
+        content = {"message": "El usuario no existe",
+                   "Code": 400}
+        return make_response(jsonify(content), status.HTTP_400_BAD_REQUEST)
+
+
+@app.route('/api/EditProfile')
+@auth.login_required
+def editProfile():
+
+    session = Session()
+    req_data = request.get_json()
+
+    #Terminar funcion de editar perfil
+
 
 
 def bad_request(message):

@@ -9,7 +9,7 @@ import uuid
 from flask_httpauth import HTTPBasicAuth
 from flask_api import status, response
 from pyfcm import FCMNotification
-from sqlalchemy import Column, Integer, String, Binary, Numeric, Float, Date, Boolean, ForeignKey,SmallInteger, Time
+import datetime
 
 app = Flask(__name__)
 
@@ -42,8 +42,8 @@ def verify(username, password):
 @app.route('/api/GetProfiles/Page', methods=['GET'])
 @auth.login_required
 def page():
-    return get_paginated_list(Usuario, '/api/GetProfiles/Page',1,10) #start=request.args.get('start', 1, int),
-                              #limit=request.args.get('limit', 10, int))
+    return get_paginated_list(Usuario, '/api/GetProfiles/Page', start=request.args.get('start', 1, int),
+                              limit=request.args.get('limit', 10, int))
 
 
 def get_paginated_list(cls, url, start, limit):
@@ -288,7 +288,6 @@ def saveRoom():
         return make_response(jsonify(content), status.HTTP_200_OK)
 
 
-
 @app.route('/api/LoginUsuario', methods=['POST'])
 @auth.login_required
 def LoginUsuario():
@@ -474,12 +473,10 @@ def createPersonality():
 @app.route('/api/EditProfile')
 @auth.login_required
 def editProfile():
-
     session = Session()
     req_data = request.get_json()
 
-    #Terminar funcion de editar perfil
-
+    # Terminar funcion de editar perfil
 
 
 def bad_request(message):
@@ -506,6 +503,7 @@ def sendNotification():
     else:
         return make_response("Push No enviada", status.HTTP_400_BAD_REQUEST)
 
+
 @app.route('/api/RequestAmistad', methods=['POST'])
 def RequestAmistad():
     session = Session()
@@ -513,34 +511,37 @@ def RequestAmistad():
     req_data = request.get_json()
 
     Emisor = req_data['Emisor'].encode('utf-8')
-    Receptor = req_data['Amueblado'].encode('utf-8')
+    Receptor = req_data['Receptor'].encode('utf-8')
     IdChat = req_data['IdChat'].encode('utf-8')
 
-    Existe = session.query(Amistad).filter(Amistad.Receptor == Receptor & Amistad.Emisor == Emisor).first()
-    if Existe is not None:
+    Existe = session.query(Amistad).filter(Amistad.Receptor == Receptor and Amistad.Emisor == Emisor).first()
+    if Existe is None:
         IdAmistad = str(uuid.uuid1())
-        Hora = Time()
-        Fecha = Date()
-        newRelation = Amistad(IdAmistad, IdChat , Receptor, Emisor, Hora, Fecha, 1)
+        Hora = datetime.datetime.now().time()
+        Fecha = datetime.datetime.now().date()
+        newRelation = Amistad(IdAmistad, IdChat, Receptor, Emisor, Hora, Fecha, 1)
 
         session.add(newRelation)
 
         session.commit()
 
         content = {"message": "Se establecio una relacion",
-               "Code": 200}
+                   "Code": 200}
+
+        return make_response(jsonify(content), status.HTTP_200_OK)
     else:
         content = {"message": "Existe una relacion",
                    "Code": 200}
 
-    return make_response(jsonify(content), status.HTTP_200_OK)
+        return make_response(jsonify(content), status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @app.route('/api/GetSolicitud', methods=['GET'])
 @auth.login_required
 def GetSolicitud():
     session = Session()
 
-    Emisor =request.args.get('IdUsuario')
+    Usuario = request.args.get('IdUsuario').encode('utf-8')
 
     Solicitudes = session.query(Amistad).all()
 
@@ -549,18 +550,20 @@ def GetSolicitud():
     # Se itera en cada usuario de la lista de usuarios que regresa el query
     for Solicitud in Solicitudes:
 
-        if Emisor == Solicitud.Receptor & Solicitud.Estatus == 1:
+        if Usuario == Solicitud.Receptor.strip() and Solicitud.Estatus == 1:
 
             SolicitudObj = {}
             if Solicitud is not None:
                 SolicitudObj = {
-                    'IdChat': Solicitud.Idchat,
-                    'Emisor': Solicitud.Emisor,
-                    'Receptor': Solicitud.Receptor,
-                    'Fecha': Solicitud.Fecha,
-                    'Hora': Solicitud.Hora,
+                    'id': str(Solicitud.id),
+                    'IdChat': str(Solicitud.idChat),
+                    'Emisor': str(Solicitud.Emisor),
+                    'Receptor': str(Solicitud.Receptor),
+                    'Fecha': str(Solicitud.Fecha),
+                    'Hora': str(Solicitud.Hora),
                     'Estatus': Solicitud.Estatus
                 }
+
             dataList.append(SolicitudObj)
 
     session.commit()
@@ -574,7 +577,7 @@ def GetSolicitud():
 def GetChat():
     session = Session()
 
-    Emisor = request.args.get('IdUsuario')
+    User = request.args.get('IdUsuario').encode('utf-8')
 
     Solicitudes = session.query(Amistad).all()
 
@@ -583,16 +586,17 @@ def GetChat():
     # Se itera en cada usuario de la lista de usuarios que regresa el query
     for Solicitud in Solicitudes:
 
-        if Emisor == Solicitud.Receptor & Solicitud.Estatus == 2:
+        if User == Solicitud.Receptor and Solicitud.Estatus == 2:
 
             SolicitudObj = {}
             if Solicitud is not None:
                 SolicitudObj = {
-                    'IdChat': Solicitud.Idchat,
-                    'Emisor': Solicitud.Emisor,
-                    'Receptor': Solicitud.Receptor,
-                    'Fecha': Solicitud.Fecha,
-                    'Hora': Solicitud.Hora,
+                    'id': str(Solicitud.id),
+                    'IdChat': str(Solicitud.idChat),
+                    'Emisor': str(Solicitud.Emisor),
+                    'Receptor': str(Solicitud.Receptor),
+                    'Fecha': str(Solicitud.Fecha),
+                    'Hora': str(Solicitud.Hora),
                     'Estatus': Solicitud.Estatus
                 }
             dataList.append(SolicitudObj)
@@ -609,18 +613,37 @@ def RechazarSolicitud():
     session = Session()
     req_data = request.get_json()
 
-    IdChat = req_data['IdChat'].encode('utf-8')
+    IdSolicitud = req_data['IdSolicitud'].encode('utf-8')
 
-    Solicitud = session.query(Amistad.IdAmistad).first()
+    Solicitud = session.query(Amistad).filter(Amistad.id == IdSolicitud).first()
 
-    session.delete(Solicitud)
+    if Solicitud is not None:
+        Solicitud.Estatus = 3
 
     session.commit()
 
-    content = {"message": "Se rechazo la solicitud",
+    content = {"message": "Se Rechazo la solicitud",
                "Code": 200}
 
     return make_response(jsonify(content), status.HTTP_200_OK)
 
 
+@app.route('/api/AceptarSolicitud', methods=['POST'])
+@auth.login_required
+def Aceptarsolicitud():
+    session = Session()
+    req_data = request.get_json()
 
+    IdSolicitud = req_data['IdSolicitud'].encode('utf-8')
+
+    Solicitud = session.query(Amistad).filter(Amistad.id == IdSolicitud).first()
+
+    if Solicitud is not None:
+        Solicitud.Estatus = 2
+
+    session.commit()
+
+    content = {"message": "Se Acepto la solicitud",
+               "Code": 200}
+
+    return make_response(jsonify(content), status.HTTP_200_OK)

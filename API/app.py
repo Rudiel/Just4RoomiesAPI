@@ -90,7 +90,7 @@ def get_paginated_list(cls, url, start, limit):
         if room is not None:
             RoomObj = {
                 'Id': room.IdHabitacion,
-                'Amueblado': room.Amueblado,
+                'Amueblado': bool(room.Amueblado),
                 'Costo': room.Costo,
                 'Latitud': room.Latitud,
                 'Longitud': room.Longitud
@@ -100,12 +100,12 @@ def get_paginated_list(cls, url, start, limit):
         personObj = {}
         if personalidad is not None:
             personObj = {
-                'Fumas': personalidad.Fumas,
-                'Mascotas': personalidad.Mascotas,
-                'Estudias': personalidad.Estudias,
-                'Activo': personalidad.Activo,
-                'Fiestero': personalidad.Fiestero,
-                'Cocinas': personalidad.Cocinas
+                'Fumas': bool(personalidad.Fumas),
+                'Mascotas': bool(personalidad.Mascotas),
+                'Estudias': bool(personalidad.Estudias),
+                'Activo': bool(personalidad.Activo),
+                'Fiestero': bool(personalidad.Fiestero),
+                'Cocinas': bool(personalidad.Cocinas)
             }
         # Se crea un objeto por cada usuario
         UsuarioObj = {
@@ -170,12 +170,12 @@ def getProfiles():
         personObj = {}
         if personalidad is not None:
             personObj = {
-                'Fumas': personalidad.Fumas,
-                'Mascotas': personalidad.Mascotas,
-                'Estudias': personalidad.Estudias,
-                'Activo': personalidad.Activo,
-                'Fiestero': personalidad.Fiestero,
-                'Cocinas': personalidad.Cocinas
+                'Fumas': bool(personalidad.Fumas),
+                'Mascotas': bool(personalidad.Mascotas),
+                'Estudias': bool(personalidad.Estudias),
+                'Activo': bool(personalidad.Activo),
+                'Fiestero': bool(personalidad.Fiestero),
+                'Cocinas': bool(personalidad.Cocinas)
             }
         # Se crea un objeto por cada usuario
         UsuarioObj = {
